@@ -1,0 +1,62 @@
+
+/********************************************************
+*			宿主数组-指示变量
+*
+* 作者：zqq
+* 完成时间：2016-08-05
+*********************************************************/ 
+
+#include <stdio.h>
+#include <sqlca.h>
+#include <string.h>
+
+EXEC SQL BEGIN DECLARE SECTION;
+	char *serverid = "scott/123@ORCL";
+
+	int		deptno[100];
+	varchar	dname[100][20];
+	varchar	loc[100][20];
+	short 	loc_ind[100];
+
+
+EXEC SQL END DECLARE SECTION;
+
+//连接错误处理
+void connect_error(void)
+{
+	EXEC SQL WHENEVER SQLERROR CONTINUE;  //下一步，即 不会递归下去
+	printf("Err reason: %.*s\n", sqlca.sqlerrm.sqlerrml, sqlca.sqlerrm.sqlerrmc);
+	EXEC SQL ROLLBACK WORK RELEASE;
+	exit(1);
+}
+
+/*--------------------------------------------------
+ *					主程序
+ *				  从这里开始
+ *--------------------------------------------------*/
+int main(void)
+{
+	int rcv = -1;
+	int count = 0;  //记录获取个数
+	int i = 0;
+
+	EXEC SQL WHENEVER SQLERROR DO connect_error();
+	EXEC SQL connect :serverid;
+
+	EXEC SQL WHENEVER NOT FOUND CONTINUE;
+	EXEC SQL select deptno, dname, loc into :deptno, :dname, :loc:loc_ind from dept;
+
+	count = sqlca.sqlerrd[2];
+	printf("count = %d\n", count);
+
+
+	printf("\nSelect from dept: \n\n");
+	for (i = 0; i < count; ++i)
+	{
+		printf("%d \t%s \t%s\n", deptno[i], dname[i].arr, loc[i].arr);
+	}
+
+	EXEC SQL commit release;
+
+	return rcv;
+}

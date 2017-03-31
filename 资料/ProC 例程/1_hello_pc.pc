@@ -1,0 +1,36 @@
+
+#include <stdio.h>
+#include <sqlca.h>
+
+//定义宿主变量 serverid
+EXEC SQL BEGIN DECLARE SECTION;  //(EXEC执行 DECLARE声明)
+		char *serverid = "hr/123@ORCL";  //我的名大写
+EXEC SQL END DECLARE SECTION;
+
+
+int main()
+{
+	int rcv = 0;
+		
+	//在c中是宿主变量
+	printf("Welcom to SQL! \nLogin: %s\n", serverid);
+	
+	//嵌入式SQL必须要以EXEC SQL开头
+	//规定变量 --> :serverid
+	EXEC SQL connect :serverid;
+	if (0 != sqlca.sqlcode)
+	{
+		rcv = sqlca.sqlcode;
+		printf("EXEC SQL connect Error! ORA: %d\n", rcv);
+		exit(rcv);
+	}
+	
+	printf("EXEC SQL connect Successfully! \nUser: %s\n", serverid);
+	
+	EXEC SQL COMMIT RELEASE;
+	
+	return rcv;		
+		
+}
+
+

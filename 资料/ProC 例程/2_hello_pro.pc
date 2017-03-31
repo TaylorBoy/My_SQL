@@ -1,0 +1,80 @@
+
+/*
+
+NAME
+       gcc - GNU project C and C++ compiler
+
+SYNOPSIS
+       gcc [-c|-S|-E] [-std=standard]
+           [-g] [-pg] [-Olevel]
+           [-Wwarn...] [-pedantic]
+           [-Idir...] [-Ldir...]
+           [-Dmacro[=defn]...] [-Umacro]
+           [-foption...] [-mmachine-option...]
+           [-o outfile] [@file] infile...
+
+       Only the most useful options are listed here; see below for the remainder.  g++ accepts mostly the same
+       options as gcc.
+       */
+       
+       //1  proc dm01_hello.pc
+       
+       //2  gcc dm01_hello.c -o dm01_hello 
+    //gcc dm01_hello.c -o dm01_hello  -I/home/oracle_11/app/oracle/product/11.2.0/db_1/precomp/public \
+    // 										-L/home/oracle_11/app/oracle/product/11.2.0/db_1/lib -lclntsh
+     
+       
+     
+       
+
+/*       
+/home/oracle_11/app/oracle/product/11.2.0/db_1/precomp/admin	
+ottcfg.cfg  pcscfg.cfg  shrept.lst       
+*/
+//proc编译器【表情】====》gcc编译器，编译你写dm01_hello.pc   
+
+///usr/lib/gcc/x86_64-redhat-linux/4.4.4/include  
+
+
+/*
+[oracle@localhost public]$ pwd
+/home/oracle_11/app/oracle/product/11.2.0/db_1/precomp/public
+[oracle@localhost public]$ dir
+BNDDSC.FOR  oraca5.cob  ORACA.COB  ORACA.H     sqlapr.h    sqlca.cbt  SQLCA.FOR  sqlcpr.h  sqlkpr.h
+bndsel.cob  oraca.cbt   ORACA.FOR  SELDSC.FOR  sqlca5.cbt  sqlca.cob  sqlca.h    sqlda.h   sqlucs2.h
+oraca5.cbt  oraca.cob   oraca.h    sql2oci.h   sqlca5.cob  SQLCA.COB  SQLCA.H    SQLDA.H
+*/  
+     
+#include <stdio.h>
+#include <string.h>
+#include <string.h>
+#include "sqlca.h"
+
+//定义宿主变量 serverid
+
+EXEC SQL BEGIN DECLARE SECTION  ;
+	char *serverid = "scott/123@ORCL";  //默认密码tiger, ORCL要大写（也许是我自己写的）
+EXEC SQL END DECLARE SECTION; 
+
+int main()
+{
+	
+	int ret  = 0;
+	printf("hello....\n");
+
+	//在C中是宿主变量
+	printf("serverid:%s \n", serverid);
+
+	//嵌入式SQL语言必须要以 EXEC SQL开头
+	//:serverid  龟ding
+	EXEC SQL connect :serverid; 
+	if (sqlca.sqlcode != 0)
+	{
+		ret = sqlca.sqlcode;
+		printf("EXEC SQL connect:err, %d\n", ret);
+		return ret;
+	}
+	printf("connect ok\n");
+
+	return ret;
+}

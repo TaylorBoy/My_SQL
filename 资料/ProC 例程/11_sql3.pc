@@ -1,0 +1,114 @@
+/************************************************
+*				动态sql(SQL 1)
+* 作者：zqq
+* 完成时间：2016-08-06
+*************************************************/
+
+#include <stdio.h>
+#include <sqlca.h>
+#include <string.h>
+
+//错误处理函数
+void connect_error(void);
+
+//定义宿主
+typedef char DnameType[20];
+typedef char LocType[20];
+
+EXEC SQL BEGIN DECLARE SECTION;
+	char *userName = "scott";
+	char *password = "123";
+	char *serverid = "ORCL";
+
+	EXEC SQL TYPE DnameType is string(20);
+	EXEC SQL TYPE LocType is string(20);
+
+	int			deptno;
+	DnameType	dname;
+	short		dname_ind;
+	LocType		loc;
+	short		loc_ind;
+	
+	//动态
+	char	mySql[1024];
+	char 	*pSql;
+
+EXEC SQL END DECLARE SECTION;
+
+int main(void)
+{ 
+	char choose_char = 0;
+	
+	memset(mySql, 0, sizeof(mySql));
+	pSql = NULL;
+	
+	/* give the database connection a unique name */ 
+	EXEC SQL DECLARE DB_NAME DATABASE; 
+	
+	EXEC SQL WHENEVER SQLERROR DO connect_error();
+	EXEC SQL connect :userName IDENTIFIED BY :password  USING :serverid;
+	printf("Connected successfully ! Hello %s !\n", userName);
+	
+	/***************************************************/
+	
+	//循环处理sql3
+	while (1)
+	{
+		printf("请输入部门编号：");
+		scanf("%d", &deptno);
+		
+		//准备动态sql
+		EXEC SQL PREPARE my_pre_sql FROM 'select deptno, dname, loc from dept where deptno = :a';
+		
+		//定义游标
+		EXEC SQL DECLARE c CURSOR FOR my_pre_sql;
+		
+		//打开游标
+		EXEC SQL OPEN c USING :deptno;
+		
+		//提取数据
+		
+		EXEC SQL WHENEVER NOT FOUND DO BREAK;
+		for (; ; )
+		{
+			EXEC SQL FETCH c INTO :deptno, :dname, :loc:loc_ind;
+			printf("\nRES> %d, %s, %s\n\n", deptno, dname, loc);
+		}
+		
+		//关闭游标
+		EXEC SQL CLOSE c; 
+		
+		//提交
+		EXEC SQL commit;
+		
+		//清空输入和deptno，选择继续或退出
+		//fllush(stdin);
+		deptno = 0;
+		getchar();
+		
+		printf("Enter Q to quit, others to continue: ");
+		scanf("%c", &choose_char);
+		//fllush(stdin);
+		
+		if ('q' == choose_char || 'Q' == choose_char)
+		{
+			break;
+		}
+	}
+	
+	/***************************************************/
+	
+	EXEC SQL COMMIT WORK RELEASE;
+	printf("\nQuit !\n");
+	
+	return 0;
+}
+
+//错误处理函数
+void connect_error(void)
+{
+	EXEC SQL WHENEVER SQLERROR CONTINUE;
+	printf("ERROR: %.*s\n", sqlca.sqlerrm.sqlerrml, sqlca.sqlerrm.sqlerrmc);
+	EXEC SQL COMMIT WORK RELEASE;
+	exit(1);
+}

@@ -1,0 +1,70 @@
+/*******************************************
+*            Proc程序
+*
+*       数据的增、删、改、查
+*
+* 作者：zqq
+* 完成日期：2016-08-04
+********************************************/
+
+#include <stdio.h>
+#include <sqlca.h>
+#include <string.h>
+
+EXEC SQL BEGIN DECLARE SECTION;
+	char *serverid = "scott/123@ORCL";
+	//Add data to dept
+	int 	deptno;
+	char	dname[20];
+	char  loc[20];
+EXEC SQL END DECLARE SECTION;
+
+int main(void)
+{
+	int rcv = 0;
+
+	//每句sql语句需要EXEC SQL开头
+	EXEC SQL connect :serverid;
+	if (0 != sqlca.sqlcode)
+	{
+		//连接失败	
+		rcv = sqlca.sqlcode;
+		printf("%[s] Connect Error! ORA: %d\n", serverid, rcv);
+		return rcv;
+	}
+
+	printf("[%s] Connect Successfully! \n\n", serverid);
+
+	/* Insert */
+	deptno = 50;
+	strcpy(dname, "50_Name");
+	strcpy(loc, "50_loc");
+
+	//insert into dept(deptno, dname, loc) values(50,'50name', '50loc');
+	//EXEC SQL insert into dept(deptno, dname, loc) values(:deptno, :dname, :loc);
+	//EXEC SQL commit;
+
+	/* Delete */
+	//delete from dept where deptno = 50;
+	//EXEC SQL delete from dept where deptno = :deptno;
+
+	/*  Uptate */ 
+	//strcpy(loc, "new_Loc");
+	//EXEC SQL update dept set loc = :loc where deptno = :deptno;
+
+	/* Select */
+	//select deptno, dname, loc from dept where loc = 50;
+	for (rcv = 5; rcv > 0; --rcv)
+	{
+		printf("Please input deptno: ");
+		scanf("%d", &deptno);
+		EXEC SQL select deptno, dname, loc into :deptno, :dname, :loc from dept where deptno = :deptno;
+		printf("DEPTNO\tDNAME\t\t\tLOC \n%5d\t%s\t%s\n\n", deptno, dname, loc);
+
+		EXEC SQL commit;
+	}
+
+	EXEC SQL commit release;  //提交事务并断开连接
+
+	return rcv;
+}

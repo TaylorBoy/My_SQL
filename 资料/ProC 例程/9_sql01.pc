@@ -1,0 +1,87 @@
+/************************************************
+*				动态sql(SQL 1)
+* 作者：zqq
+* 完成时间：2016-08-06
+*************************************************/
+
+#include <stdio.h>
+#include <sqlca.h>
+#include <string.h>
+
+//错误处理函数
+void connect_error(void);
+
+//定义宿主
+typedef char DnameType[20];
+typedef char LocType[20];
+
+EXEC SQL BEGIN DECLARE SECTION;
+	char *userName = "scott";
+	char *password = "123";
+	char *serverid = "ORCL";
+
+	EXEC SQL TYPE DnameType is string(20);
+	EXEC SQL TYPE LocType is string(20);
+
+	int			deptno;
+	DnameType	dname;
+	short		dname_ind;
+	LocType		loc;
+	short		loc_ind;
+	
+	//动态
+	char	mySql[1024];
+	char 	*pSql;
+
+EXEC SQL END DECLARE SECTION;
+
+int main(void)
+{ 
+	char choose_char = 0;
+	
+	memset(mySql, 0, sizeof(mySql));
+	pSql = NULL;
+	
+	EXEC SQL WHENEVER SQLERROR DO connect_error();
+	EXEC SQL connect :userName IDENTIFIED BY :password USING :serverid;
+	printf("Connected successfully ! Hello %s !\n", userName);
+	
+	/***************************************************/
+	
+	pSql = mySql;
+	//循环处理sql语句
+	for (;;)
+	{
+		printf("\nPlease enter sql(Not select): ");
+		gets(mySql);
+		
+		EXEC SQL EXECUTE IMMEDIATE :pSql;	
+		EXEC SQL COMMIT;
+		
+		printf("Continue (y/n)? ____\b\b");
+		scanf("%c", &choose_char);
+		fflush(stdin);
+		
+		if ('n' == choose_char || 'N' == choose_char)
+		{
+			break;
+		}
+		
+	}
+	
+	/***************************************************/
+	
+	EXEC SQL COMMIT WORK RELEASE;
+	printf("\nQuit !\n");
+	
+	return 0;
+}
+
+//错误处理函数
+void connect_error(void)
+{
+	EXEC SQL WHENEVER SQLERROR continue;
+	printf("Error: %.*s\n", sqlca.sqlerrm.sqlerrml, sqlca.sqlerrm.sqlerrmc);
+	EXEC SQL COMMIT WORK RELEASE;
+	exit(1);
+}

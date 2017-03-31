@@ -1,0 +1,97 @@
+/*******************************************
+*            Proc程序
+*
+*     数据插入话题--字符串指示变量
+*
+* 作者：zqq
+* 完成日期：2016-08-05
+********************************************/
+
+#include <stdio.h>
+#include <sqlca.h>
+#include <string.h>
+
+EXEC SQL BEGIN DECLARE SECTION;
+	char *serverid = "scott/123@ORCL";
+	
+	//Add data to dept
+	int 	deptno;
+	char	dname[20];
+	short	dname_ind;  //指示变量：必须是short类型，-1为null
+	char	loc[20];
+	short	loc_ind;
+EXEC SQL END DECLARE SECTION;
+
+
+//插入中文
+int main(void)
+{
+	int rcv = -1;
+	
+	EXEC SQL connect :serverid;
+	rcv = sqlca.sqlcode;
+	if (0 != rcv)
+	{
+		printf("[%s] connected Error! ORA: %d\n", serverid, rcv);
+		return rcv;
+	}
+	printf("[%s] connected Successfully! \n", serverid);
+	
+	deptno = 66;
+	strcpy(dname, "66口袋里的糖");
+	strcpy(loc, "66糖");
+	printf("%d -- %s -- %s\n", deptno, dname, loc);
+	
+	EXEC SQL insert into dept(deptno, dname, loc) values(:deptno, :dname:dname_ind, :loc:loc_ind);
+	//EXEC SQL insert into dept(deptno, dname, loc) values(:deptno, :dname, :loc);
+	EXEC SQL commit;
+	
+	EXEC SQL commit release;
+	
+	return rcv;
+	
+}
+
+
+//字符串指示变量
+int main01(void)
+{
+	int rcv = 0;
+
+	EXEC SQL connect :serverid;
+	if (0 != sqlca.sqlcode)
+	{
+		//连接失败	
+		rcv = sqlca.sqlcode;
+		printf("%[s] Connect Error! ORA: %d\n", serverid, rcv);
+		return rcv;
+	}
+
+	printf("[%s] Connect Successfully! \n\n", serverid);
+
+	//赋值
+	deptno = 60;
+	strcpy(dname, "60_Name");
+	strcpy(loc, "60_loc");
+	//loc_ind = -1;  //为null
+	
+	/* Insert */	
+	//EXEC SQL insert into dept(deptno, dname, loc) values(:deptno, :dname:dname_ind, :loc:loc_ind);
+	//EXEC SQL commit;
+	
+	/* Update*/
+	//loc_ind = 6;
+	//EXEC SQL update dept set loc = :loc where deptno = :deptno;
+	
+	/* Select */
+	EXEC SQL select *  into :deptno, :dname:dname_ind, :loc:loc_ind  from dept where deptno = 30;
+	printf("Deptno: %d, dname_ind = %d, loc_ind = %d\n", deptno, dname_ind, loc_ind);
+	printf("%d, %s, %s\n", deptno, dname, loc);
+	
+
+	
+
+	EXEC SQL commit release;  //提交事务并断开连接
+
+	return rcv;
+}

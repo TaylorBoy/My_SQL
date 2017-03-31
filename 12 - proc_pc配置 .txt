@@ -1,0 +1,32 @@
+vc6.0集成proc （vc6.0+office2010组件冲突）
+以下vc6.0默认安装在C:\Program Files\Microsoft Visual Studio\目录下.
+Oracle默认安装在C:\Oracle\目录下
+
+1. 把Proc集成到vc tools -> option -> Directories(目录)添加可执行文件(Exe. files)
+				c:\oracle\BIN
+
+2. vc编译 tools -> option添加
+		1) tools -> option添加 [include files]
+				c:\oracle\OCI\include 
+				c:\oracle\precomp\bublic
+		2) Add Lib  添加动态库[Library files]
+				c:\oracle\OCI\LIB
+				c:\oracle\precomp\LIB
+		3) ADD LIB
+				c:\oracle\prrcomp\LIB\orasql10.lib 添加到vc工程下
+
+3. 配置Proc工具 编译.pc环境
+		修改C:\Oracle\product\10.2.0\client_1(或db_1)\precomp\admin\pcscfg.cfg文件
+					define=(WIN32_LEAN_AND_MEAN)
+					parse=full
+					DYNAMIC=ANSI
+					include="C:\Program Files\Microsoft Visual Studio\VC98\Include"
+					include="C:\Oracle\product\10.2.0\db_1\OCI\include"
+					include="C:\Oracle\product\10.2.0\db_1\precomp\public"
+
+4. 配置vc6.0编译
+		d:\proc\demo01\demo.pc
+		在.pc文件上右键 -> 设置setting
+		添加：
+			命令commond：proc $(InputDir)\$(InputName)
+			输出ouput:   proc $(InputDir)\$(InputName).c

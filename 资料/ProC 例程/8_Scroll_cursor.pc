@@ -1,0 +1,103 @@
+/************************************************
+*				滚动游标(scroll cursor)
+* 作者：zqq
+* 完成时间：2016-08-06
+*************************************************/
+
+#include <stdio.h>
+#include <sqlca.h>
+#include <string.h>
+
+//错误处理函数
+void connect_error(void);
+
+//定义宿主
+typedef char DnameType[20];
+typedef char LocType[20];
+
+EXEC SQL BEGIN DECLARE SECTION;
+	char *userName = "scott";
+	char *password = "123";
+	char *serverid = "ORCL";
+
+	EXEC SQL TYPE DnameType is string(20);
+	EXEC SQL TYPE LocType is string(20);
+
+	int			deptno;
+	DnameType	dname;
+	short		dname_ind;
+	LocType		loc;
+	short		loc_ind;
+
+EXEC SQL END DECLARE SECTION;
+
+int main(void)
+{
+	EXEC SQL WHENEVER SQLERROR DO connect_error();
+	EXEC SQL CONNECT :userName IDENTIFIED BY :password USING :serverid;
+	
+	/***************************************************/
+	
+	//1. 定义游标
+	EXEC SQL DECLARE dept_cursor SCROLL CURSOR FOR
+	select deptno, dname, loc from dept;
+	
+	
+	//2. 打开游标
+	EXEC SQL OPEN dept_cursor;
+	
+	
+	//3. 提取数据(fetch into) NOT FOUND结束标志
+	
+	{
+		//查询最后一条
+		EXEC SQL FETCH LAST dept_cursor INTO :deptno, :dname:dname_ind, :loc:loc_ind;
+		printf("条目：%d  ", sqlca.sqlerrd[2]);
+		printf("%d, %s, %s\n", deptno, dname, loc);
+		
+		//查询第一条
+		EXEC SQL FETCH FIRST dept_cursor INTO :deptno, :dname:dname_ind, :loc:loc_ind;
+		printf("条目：%d  ", sqlca.sqlerrd[2]);
+		printf("%d, %s, %s\n", deptno, dname, loc);
+		
+		//查看第三条
+		EXEC SQL FETCH ABSOLUTE 3 dept_cursor INTO :deptno, :dname:dname_ind, :loc:loc_ind;
+		printf("条目：%d  ", sqlca.sqlerrd[2]);
+		printf("%d, %s, %s\n", deptno, dname, loc);
+		
+		//查询相对条目（相对上面）
+		EXEC SQL FETCH RELATIVE -2 dept_cursor INTO :deptno, :dname:dname_ind, :loc:loc_ind;
+		printf("条目：%d  ", sqlca.sqlerrd[2]);
+		printf("%d, %s, %s\n", deptno, dname, loc);
+		
+		//查询下一条
+		EXEC SQL FETCH NEXT dept_cursor INTO :deptno, :dname:dname_ind, :loc:loc_ind;
+		printf("条目：%d  ", sqlca.sqlerrd[2]);
+		printf("%d, %s, %s\n", deptno, dname, loc);
+		
+		//查询上一条
+		EXEC SQL FETCH PRIOR dept_cursor INTO :deptno, :dname:dname_ind, :loc:loc_ind;
+		printf("条目：%d  ", sqlca.sqlerrd[2]);
+		printf("%d, %s, %s\n", deptno, dname, loc);
+	}
+	
+	//4. 关闭游标
+	EXEC SQL CLOSE dept_cursor;
+	
+	
+	/***************************************************/
+
+	EXEC SQL COMMIT WORK RELEASE;
+	printf("Done !\n");
+
+	return 0;
+}
+
+//错误处理函数
+void connect_error(void)
+{
+	EXEC SQL WHENEVER SQLERROR CONTINUE;
+	printf("Error : %.*s\n", sqlca.sqlerrm.sqlerrml, sqlca.sqlerrm.sqlerrmc);
+	EXEC SQL COMMIT WORK RELEASE;
+	exit(1);
+}

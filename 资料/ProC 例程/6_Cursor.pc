@@ -1,0 +1,92 @@
+
+/********************************************************
+*			  游标
+*
+* 作者：zqq
+* 完成时间：2016-08-05
+*********************************************************/
+
+#include <stdio.h>
+#include <sqlca.h>
+#include <string.h>
+
+//链接数据库
+void connect_orcl(void);
+//错误处理
+void sqlerr(void);
+
+//定义人工类型转换
+typedef char NameType[20];
+
+EXEC SQL BEGIN DECLARE SECTION;
+	char 		*username = "scott";
+	char		*passwd = "123";
+	char		*serverid = "ORCL";
+
+	//宿主数据类型
+	int			deptno_t;
+	char		dname_t[20];
+	char		loc_t[20];
+
+	//oracle外部数据类型
+	int			deptno_o;
+	varchar		dname_o[20];
+	varchar		loc_o[20];
+	
+	//Oracle的外部数据类型与宿主变量的人工类型转换
+	EXEC SQL TYPE NameType is string(20);
+	int 		deptno;
+	NameType	dname;
+	NameType	loc;
+	
+EXEC SQL END DECLARE SECTION;
+
+
+int main(void)
+{
+	int i = 0;
+	
+	EXEC SQL WHENEVER SQLERROR DO sqlerr();
+	connect_orcl();
+	
+	printf("\n以下是数据操作！\n\n");
+	/***************************************************/
+
+	//宿主数据类型
+	EXEC SQL select * into :deptno_t, :dname_t, :loc_t from dept where deptno = 10;
+	printf("宿主类型: %d, %s, %s\n", deptno_t, dname_t, loc_t);
+
+	//oracle外部数据类型
+	EXEC SQL select * into :deptno_o, :dname_o, :loc_o from dept where deptno = 10;
+	printf("外部类型: %d, %s, %s\n", deptno_o, dname_o.arr, loc_o.arr);
+
+	//干预数据类型，字符串以0结尾
+	EXEC SQL select deptno, dname, loc into :deptno, :dname, :loc from dept where deptno = 10;
+	printf("人工干预: %d, %s, %s\n\n", deptno, dname, loc);
+	
+	/***************************************************/
+
+	EXEC SQL commit release;
+
+	return 0;
+}
+
+//链接数据库
+void connect_orcl(void)
+{
+	EXEC SQL CONNECT :username IDENTIFIED BY :passwd USING :serverid;
+	if (0 != sqlca.sqlcode)
+	{
+		printf("Connect error! ORA: %d\n", sqlca.sqlcode);
+		return;
+	}
+}
+
+//错误处理
+void sqlerr(void)
+{
+	EXEC SQL WHENEVER SQLERROR CONTINUE;  //下一步，即 不会递归下去
+	printf("Err reason: %.*s\n", sqlca.sqlerrm.sqlerrml, sqlca.sqlerrm.sqlerrmc);
+	EXEC SQL ROLLBACK WORK RELEASE;
+	exit(1);
+}
